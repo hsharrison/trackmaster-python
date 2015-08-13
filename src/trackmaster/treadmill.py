@@ -64,7 +64,7 @@ class Treadmill(object):
         else:
             stop_after = False
 
-        ascii_speed = '{:04d}'.format(10 * round(rounded_speed))
+        ascii_speed = '{:04d}'.format(round(10 * rounded_speed))
         self._command('3', data=ascii_speed)
         self._speed = rounded_speed
 
