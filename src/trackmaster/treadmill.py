@@ -91,7 +91,7 @@ class Treadmill(object):
 
     @property
     def belt_running(self):
-        return self._status_request('0', 1) == 33
+        return self._status_request('0', 1) == 3
 
     def start_belt(self):
         """Start the belt."""
