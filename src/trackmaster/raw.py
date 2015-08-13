@@ -8,12 +8,12 @@ class TreadmillError(RuntimeError):
 
 def communicate(dev, data, acknowledgment_code, verbose=False):
     if verbose:
-        print('->', data)
+        print('->', repr(data))
     dev.write(data)
 
     response = dev.read(1)
     if verbose:
-        print('<-', response)
+        print('<-', repr(response))
 
     if response == a2b_hex('BE'):
         raise TreadmillError('Input Command Data Out of Range')
@@ -74,5 +74,5 @@ def status_request(dev, code, response_length, verbose=False):
     communicate(dev, a2b_hex('C' + code), a2b_hex('D' + code), verbose=verbose)
     response = dev.read(response_length)
     if verbose:
-        print('<-', response)
+        print('<-', repr(response))
     return response
