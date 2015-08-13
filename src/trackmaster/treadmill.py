@@ -3,6 +3,7 @@ import sys
 from serial import Serial
 from trackmaster import raw
 
+MIN_SPEED = 0.2
 MAX_SPEED = 15
 MAX_INCLINE = 25
 
@@ -22,16 +23,19 @@ class Treadmill(object):
         device : |Serial|
             The |Serial| device representing the connection to the treadmill.
         speed : float
-            The belt speed, in mph.
+            The belt speed, in mph. Min is 0.2, max is 15.
             Changes will be reflected on the treadmill.
         incline : float
-            The treadmill incline, in %.
+            The treadmill incline, in %. Min is 0, max is 25.
             Changes will be reflected on the treadmill.
+        belt_running : bool
+            Whether the belt is running.
+            Not writable.
 
         """
         self.device = Serial(port, baudrate=4800, timeout=0.5)
-        self._speed = 0
-        self._incline = 0
+        self._speed = self.get_set_speed()
+        self._incline = self.get_set_incline()
 
     @property
     def speed(self):
@@ -49,16 +53,18 @@ class Treadmill(object):
             warn('Too fast! Setting speed to {} mph instead.'.format(MAX_SPEED))
             rounded_speed = MAX_SPEED
 
-        if rounded_speed < 0.1:
+        if rounded_speed < MIN_SPEED:
             warn('Too slow! Stopping belt instead. It will have to be restarted.')
             stop_after = True
-            rounded_speed = 0.1
+            rounded_speed = MIN_SPEED
         else:
             stop_after = False
 
         ascii_speed = '{:04d}'.format(10 * round(rounded_speed))
         self._command('3', data=ascii_speed)
         self._speed = rounded_speed
+
+        self.start_belt()
 
         if stop_after:
             self.stop_belt()
@@ -78,6 +84,10 @@ class Treadmill(object):
         ascii_incline = '{:04d}'.format(round(10 * rounded_incline))
         self._command('4', data=ascii_incline)
         self._incline = rounded_incline
+
+    @property
+    def belt_running(self):
+        return self._status_request('0', 1) == 33
 
     def start_belt(self):
         """Start the belt."""
@@ -138,17 +148,6 @@ class Treadmill(object):
     def auto_stop(self):
         """Immediately set speed and incline to 0."""
         self._command('A')
-
-    def get_belt_running(self):
-        """Check if the belt is running.
-
-        Returns
-        -------
-        bool
-
-        """
-        response = self._status_request('0', 1)
-        return response == 33
 
     def get_actual_speed(self):
         """Get the current belt speed.
