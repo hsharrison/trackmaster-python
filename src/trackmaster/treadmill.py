@@ -64,7 +64,7 @@ class Treadmill(object):
         else:
             stop_after = False
 
-        ascii_speed = '{:04d}'.format(round(10 * rounded_speed))
+        ascii_speed = '{:04d}'.format(int(round(10 * rounded_speed)))
         self._command('3', data=ascii_speed)
         self._speed = rounded_speed
 
@@ -85,7 +85,7 @@ class Treadmill(object):
             warn('Incline cannot be negative. Setting incline to 0% instead.')
             rounded_incline = 0
 
-        ascii_incline = '{:04d}'.format(round(10 * rounded_incline))
+        ascii_incline = '{:04d}'.format(int(round(10 * rounded_incline)))
         self._command('4', data=ascii_incline)
         self._incline = rounded_incline
 
