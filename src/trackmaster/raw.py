@@ -2,6 +2,10 @@ from __future__ import print_function, division
 from binascii import a2b_hex
 
 
+class TreadmillError(RuntimeError):
+    """An error arising from the treadmill itself."""
+
+
 def communicate(dev, data, acknowledgment_code, verbose=False):
     if verbose:
         print('->', data)
@@ -12,12 +16,12 @@ def communicate(dev, data, acknowledgment_code, verbose=False):
         print('<-', response)
 
     if response == a2b_hex('BE'):
-        raise ValueError('Input Command Data Out of Range')
+        raise TreadmillError('Input Command Data Out of Range')
     if response == a2b_hex('BF'):
-        raise ValueError('Illegal command or command not recognized')
+        raise TreadmillError('Illegal command or command not recognized')
 
     if response != acknowledgment_code:
-        raise RuntimeError('Expected acknowledgment code {}, received {}'.format(
+        raise ValueError('Expected acknowledgment code {}, received {}'.format(
             acknowledgment_code, response
         ))
 
