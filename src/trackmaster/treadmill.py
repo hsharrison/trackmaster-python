@@ -68,7 +68,8 @@ class Treadmill(object):
         self._command('3', data=ascii_speed)
         self._speed = rounded_speed
 
-        self.start_belt()
+        if not self.belt_running:
+            self.start_belt()
 
         if stop_after:
             self.stop_belt()
