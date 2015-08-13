@@ -1,1 +1,1 @@
-from treadmill import Treadmill
+from trackmaster.treadmill import Treadmill
