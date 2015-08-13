@@ -10,7 +10,7 @@ MAX_INCLINE = 25
 
 class Treadmill(object):
     def __init__(self, port):
-        """Interface to Trackmaster Treadmill.
+        """Interface to Trackmaster treadmill.
 
         Parameters
         ----------
@@ -208,7 +208,7 @@ class Treadmill(object):
         Notes
         -----
         Should only be necessary for troubleshooting.
-        ``Treadmill.incline`` should work forst most use cases.
+        ``Treadmill.incline`` should work for most use cases.
 
         """
         response = self._status_request('4', 4)
