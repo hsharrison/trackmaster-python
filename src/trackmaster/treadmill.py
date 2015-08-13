@@ -1,5 +1,4 @@
 from __future__ import print_function, division
-from builtins import object
 from warnings import warn
 from serial import Serial
 from trackmaster import raw
