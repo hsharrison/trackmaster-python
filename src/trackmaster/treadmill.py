@@ -9,7 +9,7 @@ MAX_INCLINE = 25
 
 
 class Treadmill(object):
-    def __init__(self, port):
+    def __init__(self, port, verbose=False):
         """Interface to Trackmaster treadmill.
 
         Parameters
@@ -17,6 +17,8 @@ class Treadmill(object):
         port : str
             The port at which with treadmill is connected.
             On Linux, likely to be ``/dev/ttyUSB0``.
+        verbose : bool, optional
+            If `True`, print input and output to treadmill.
 
         Attributes
         ----------
@@ -31,9 +33,11 @@ class Treadmill(object):
         belt_running : bool
             Whether the belt is running.
             Not writable.
+        verbose : bool
 
         """
         self.device = Serial(port, baudrate=4800, timeout=0.5)
+        self.verbose = verbose
         self._speed = self.get_set_speed()
         self._incline = self.get_set_incline()
 
@@ -214,10 +218,10 @@ class Treadmill(object):
         return self.incline
 
     def _command(self, code, data=''):
-        raw.command(self.device, code, data=data)
+        raw.command(self.device, code, data=data, verbose=self.verbose)
 
     def _status_request(self, code, response_length):
-        return int(raw.status_request(self.device, code, response_length))
+        return int(raw.status_request(self.device, code, response_length, verbose=self.verbose))
 
 
 def warn(*args, **kwargs):

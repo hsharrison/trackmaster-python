@@ -2,9 +2,14 @@ from __future__ import print_function, division
 from binascii import a2b_hex
 
 
-def communicate(dev, data, acknowledgment_code):
+def communicate(dev, data, acknowledgment_code, verbose=False):
+    if verbose:
+        print('->', data)
     dev.write(data)
+
     response = dev.read(1)
+    if verbose:
+        print('<-', response)
 
     if response == a2b_hex('BE'):
         raise ValueError('Input Command Data Out of Range')
@@ -17,7 +22,7 @@ def communicate(dev, data, acknowledgment_code):
         ))
 
 
-def command(dev, code, data=''):
+def command(dev, code, data='', verbose=False):
     """Send a command to the Trackmaster and wait for acknowledgment.
 
     Parameters
@@ -32,12 +37,14 @@ def command(dev, code, data=''):
         The `code` for "Stop Belt" is therefore ``'2'``.
     data : str, optional
         Additional data sent to the Trackmaster, required for some commands.
+    verbose : bool, optional
+        If `True`, print input and output.
 
     """
-    communicate(dev, a2b_hex('A' + code) + data.encode('ascii'), a2b_hex('B' + code))
+    communicate(dev, a2b_hex('A' + code) + data.encode('ascii'), a2b_hex('B' + code), verbose=verbose)
 
 
-def status_request(dev, code, response_length):
+def status_request(dev, code, response_length, verbose=False):
     """Send a status request to the Trackmaster and return the response.
 
     Parameters
@@ -50,12 +57,18 @@ def status_request(dev, code, response_length):
         under both "C - STATUS REQUEST" and "D - STATUS RESPONSE".
         For example, the request "Xmit Belt Status" is listed as "C0" with response code "D0".
         The `code` for "Xmit Belt Status" is therefore ``'0'``.
-    response_length : The number of bytes expected to be returned (not including the response code).
+    response_length : int
+        The number of bytes expected to be returned (not including the response code).
+    verbose : bool, optional
+        If `True`, print input and output.
 
     Returns
     -------
     bytes
 
     """
-    communicate(dev, a2b_hex('C' + code), a2b_hex('D' + code))
-    return dev.read(response_length)
+    communicate(dev, a2b_hex('C' + code), a2b_hex('D' + code), verbose=verbose)
+    response = dev.read(response_length)
+    if verbose:
+        print('<-', response)
+    return response
