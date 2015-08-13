@@ -1,5 +1,5 @@
 from __future__ import print_function, division
-from warnings import warn
+import sys
 from serial import Serial
 from trackmaster import raw
 
@@ -219,3 +219,7 @@ class Treadmill(object):
 
     def _status_request(self, code, response_length):
         return int(raw.status_request(self.device, code, response_length))
+
+
+def warn(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
