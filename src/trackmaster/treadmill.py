@@ -1,12 +1,12 @@
+from __future__ import print_function, division
+from builtins import object
 from serial import Serial
 from trackmaster import raw
 
 
-class Treadmill:
+class Treadmill(object):
     def __init__(self, device, timeout=0.5):
         self.port = Serial(device, baudrate=4800, timeout=timeout)
-        self.speed = None
-        self.elevation = None
 
     def start_belt(self):
         """Start the belt."""
@@ -83,7 +83,7 @@ class Treadmill:
 
         """
         response = self._status_request('0', 1)
-        return int(response) == 33
+        return response == 33
 
     def get_actual_speed(self):
         """Get the current belt speed.
@@ -94,7 +94,7 @@ class Treadmill:
 
         """
         response = self._status_request('1', 4)
-        return int(response) / 10
+        return response / 10
 
     def get_actual_elevation(self):
         """Get the current elevation.
@@ -105,7 +105,7 @@ class Treadmill:
 
         """
         response = self._status_request('2', 4)
-        return int(response) / 10
+        return response / 10
 
     def get_set_speed(self):
         """Get the speed that the belt is currently set to.
@@ -116,7 +116,7 @@ class Treadmill:
 
         """
         response = self._status_request('3', 4)
-        return int(response) / 10
+        return response / 10
 
     def get_set_elevation(self):
         """Get the elevation that the treadmill is currently set to.
@@ -127,10 +127,10 @@ class Treadmill:
 
         """
         response = self._status_request('4', 4)
-        return int(response) / 10
+        return response / 10
 
     def _command(self, code, data=''):
         raw.command(self.port, code, data=data)
 
     def _status_request(self, code, response_length):
-        return raw.status_request(self.port, code, response_length)
+        return int(raw.status_request(self.port, code, response_length))
