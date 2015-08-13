@@ -1,12 +1,84 @@
 from __future__ import print_function, division
 from builtins import object
+from warnings import warn
 from serial import Serial
 from trackmaster import raw
 
+MAX_SPEED = 15
+MAX_INCLINE = 25
+
 
 class Treadmill(object):
-    def __init__(self, device, timeout=0.5):
-        self.port = Serial(device, baudrate=4800, timeout=timeout)
+    def __init__(self, port):
+        """Interface to Trackmaster Treadmill.
+
+        Parameters
+        ----------
+        port : str
+            The port at which with treadmill is connected.
+            On Linux, likely to be ``/dev/ttyUSB0``.
+
+        Attributes
+        ----------
+        device : |Serial|
+            The |Serial| device representing the connection to the treadmill.
+        speed : float
+            The belt speed, in mph.
+            Changes will be reflected on the treadmill.
+        incline : float
+            The treadmill incline, in %.
+            Changes will be reflected on the treadmill.
+
+        """
+        self.device = Serial(port, baudrate=4800, timeout=0.5)
+        self._speed = 0
+        self._incline = 0
+
+    @property
+    def speed(self):
+        return self._speed
+
+    @property
+    def incline(self):
+        return self._incline
+
+    @speed.setter
+    def speed(self, value):
+        rounded_speed = round(value, 1)
+
+        if rounded_speed > MAX_SPEED:
+            warn('Too fast! Setting speed to {} mph instead.'.format(MAX_SPEED))
+            rounded_speed = MAX_SPEED
+
+        if rounded_speed < 0.1:
+            warn('Too slow! Stopping belt instead. It will have to be restarted.')
+            stop_after = True
+            rounded_speed = 0.1
+        else:
+            stop_after = False
+
+        ascii_speed = '{:04d}'.format(10 * round(rounded_speed))
+        self._command('3', data=ascii_speed)
+        self._speed = rounded_speed
+
+        if stop_after:
+            self.stop_belt()
+
+    @incline.setter
+    def incline(self, value):
+        rounded_incline = round(2 * value) / 2
+
+        if rounded_incline > MAX_INCLINE:
+            warn('Too steep! Setting incline to {}% instead.'.format(MAX_INCLINE))
+            rounded_incline = MAX_INCLINE
+
+        if rounded_incline < 0:
+            warn('Incline cannot be negative. Setting incline to 0% instead.')
+            rounded_incline = 0
+
+        ascii_incline = '{:04d}'.format(round(10 * rounded_incline))
+        self._command('4', data=ascii_incline)
+        self._incline = rounded_incline
 
     def start_belt(self):
         """Start the belt."""
@@ -16,63 +88,57 @@ class Treadmill(object):
         """Stop the belt."""
         self._command('2')
 
-    def set_speed(self, speed):
-        """Set belt speed.
+    def increment_speed(self, by=0.1):
+        """Increase speed by 0.1 mph (or more).
 
         Parameters
         ----------
-        speed : float
-            Desired speed, in miles per hour.
-            Will be rounded to nearest tenth of a mph.
+        by : float, optional
+            Amount to increase speed by, in mph.
+            Default and minimum is 0.1.
 
         """
-        ascii_speed = '{:04d}'.format(round(10 * speed))
-        self._command('3', data=ascii_speed)
+        self.speed += by
 
-    def set_elevation(self, elevation):
-        """Set treadmill elevation.
+    def decrement_speed(self, by=0.1):
+        """Decrease speed by 0.1 mph (or more).
 
         Parameters
         ----------
-        elevation : float
-            Desired elevation (as a percent, e.g. 2.5).
-            Will be rounded to the nearest 0.5%.
+        by : float, optional
+            Amount to decrease speed by, in mph.
+            Default and minimum is 0.1.
 
         """
-        ascii_elevation = '{:04d}'.format(5 * round(elevation/0.5))
-        self._command('4', data=ascii_elevation)
+        self.speed -= by
 
-    def increment_speed(self):
-        """Increase speed by 0.1 mph."""
-        self.set_speed(self.get_set_speed() + 0.1)
+    def increment_incline(self, by=0.5):
+        """Increase incline by 0.5% (or more).
 
-    def decrement_speed(self):
-        """Decrease speed by 0.1 mph."""
-        self.set_speed(self.get_set_speed() - 0.1)
+        Parameters
+        ----------
+        by : float, optional
+            Amount to increase incline by, in %.
+            Default and minimum is 0.5.
 
-    def increment_elevation(self):
-        """Increase elevation by 0.5%."""
-        self.set_elevation(self.get_set_elevation() + 0.5)
+        """
+        self.incline += by
 
-    def decrement_elevation(self):
-        """Decrease elevation by 0.5%."""
-        self.set_elevation(self.get_set_elevation() - 0.5)
+    def decrement_elevation(self, by=0.5):
+        """Decrease incline by 0.5% (or more).
 
-    def freeze_speed(self):
-        """Stop any ongoing speed changes, leaving the belt at its current speed."""
-        self.set_speed(self.get_actual_speed())
+        Parameters
+        ----------
+        by : float, optional
+            Amount to decrease incline by, in %.
+            Default and minimum is 0.5.
 
-    def freeze_elevation(self):
-        """Stop any ongoing elevation changes, leaving the treadmill at its current elevation."""
-        self.set_elevation(self.get_actual_elevation())
+        """
+        self.incline -= by
 
     def auto_stop(self):
-        """Immediately set speed and elevation to 0."""
+        """Immediately set speed and incline to 0."""
         self._command('A')
-
-    def cool_down(self):
-        """Gradually set speed and elevation to 0."""
-        self._command('B')
 
     def get_belt_running(self):
         """Check if the belt is running.
@@ -92,16 +158,24 @@ class Treadmill(object):
         -------
         float
 
+        Note
+        ----
+        Does not seem to be very accurate/responsive.
+
         """
         response = self._status_request('1', 4)
         return response / 10
 
     def get_actual_elevation(self):
-        """Get the current elevation.
+        """Get the current incline.
 
         Returns
         -------
         float
+
+        Note
+        ----
+        Does not seem to be very accurate/responsive.
 
         """
         response = self._status_request('2', 4)
@@ -114,23 +188,35 @@ class Treadmill(object):
         -------
         float
 
+        Notes
+        -----
+        Should only be necessary for troubleshooting.
+        ``Treadmill.speed` should work for most use cases.
+
         """
         response = self._status_request('3', 4)
-        return response / 10
+        self._speed = response / 10
+        return self.speed
 
-    def get_set_elevation(self):
-        """Get the elevation that the treadmill is currently set to.
+    def get_set_incline(self):
+        """Get the incline that the treadmill is currently set to.
 
         Returns
         -------
         float
 
+        Notes
+        -----
+        Should only be necessary for troubleshooting.
+        ``Treadmill.incline`` should work forst most use cases.
+
         """
         response = self._status_request('4', 4)
-        return response / 10
+        self._incline = response / 10
+        return self.incline
 
     def _command(self, code, data=''):
-        raw.command(self.port, code, data=data)
+        raw.command(self.device, code, data=data)
 
     def _status_request(self, code, response_length):
-        return int(raw.status_request(self.port, code, response_length))
+        return int(raw.status_request(self.device, code, response_length))
