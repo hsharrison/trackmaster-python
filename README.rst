@@ -4,9 +4,7 @@ Python interface to Trackmaster treadmill
 Control a Trackmaster treadmill from Python, over a serial interface.
 Tested with Python 2.7 and 3.4.
 
-Example:
-
-..code-block:: python
+Example::
 
     from time import sleep
     from trackmaster import Treadmill
