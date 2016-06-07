@@ -6,7 +6,7 @@ Tested with Python 2.7 and 3.4.
 
 To install::
 
-    pip install git+https://github.com/hsharrison/trackmaster-python
+    pip install trackmaster
 
 Example::
 
