@@ -1,6 +1,9 @@
 Python interface to Trackmaster treadmill
 =========================================
 
+.. image:: https://zenodo.org/badge/22554/hsharrison/trackmaster-python.svg
+   :target: https://zenodo.org/badge/latestdoi/22554/hsharrison/trackmaster-python
+
 Control a Trackmaster treadmill from Python, over a serial interface.
 Tested with Python 2.7 and 3.4.
 
